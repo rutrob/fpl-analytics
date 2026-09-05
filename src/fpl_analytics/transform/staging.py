@@ -72,15 +72,29 @@ def build_player_gameweek_history_df(element_summaries: dict) -> pd.DataFrame:
     return df
 
 
+def build_fixtures_df(raw: list) -> pd.DataFrame:
+    df = pd.DataFrame(raw)
+    columns = [
+        "id", "event", "team_h", "team_a", "team_h_score", "team_a_score",
+        "kickoff_time", "finished", "team_h_difficulty", "team_a_difficulty",
+    ]
+    df = df[columns]
+    df = df.rename(columns={"id": "fixture_id", "event": "gameweek"})
+    df["kickoff_time"] = pd.to_datetime(df["kickoff_time"])
+    return df
+
+
 def load_all_to_duckdb(
     players_df: pd.DataFrame,
     teams_df: pd.DataFrame,
     gameweek_history_df: pd.DataFrame,
+    fixtures_df: pd.DataFrame,
 ) -> None:
     con = duckdb.connect(str(DB_PATH))
     con.execute("CREATE OR REPLACE TABLE stg_players AS SELECT * FROM players_df")
     con.execute("CREATE OR REPLACE TABLE stg_teams AS SELECT * FROM teams_df")
     con.execute("CREATE OR REPLACE TABLE fact_player_gameweek AS SELECT * FROM gameweek_history_df")
+    con.execute("CREATE OR REPLACE TABLE stg_fixtures AS SELECT * FROM fixtures_df")
     con.close()
 
 
@@ -92,9 +106,13 @@ if __name__ == "__main__":
     summaries_raw = load_latest_raw_json("element_summaries")
     gameweek_history_df = build_player_gameweek_history_df(summaries_raw)
 
-    load_all_to_duckdb(players_df, teams_df, gameweek_history_df)
+    fixtures_raw = load_latest_raw_json("fixtures")
+    fixtures_df = build_fixtures_df(fixtures_raw)
+
+    load_all_to_duckdb(players_df, teams_df, gameweek_history_df, fixtures_df)
 
     print(
         f"Zaladowano {len(players_df)} zawodnikow, {len(teams_df)} druzyn, "
-        f"{len(gameweek_history_df)} wierszy w fact_player_gameweek do {DB_PATH}"
+        f"{len(gameweek_history_df)} wierszy fact_player_gameweek, "
+        f"{len(fixtures_df)} meczow"
     )

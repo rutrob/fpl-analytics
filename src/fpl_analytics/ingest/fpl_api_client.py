@@ -56,7 +56,7 @@ if __name__ == "__main__":
     save_raw_json(fixtures, "fixtures")
     print(f"Pobrano {len(fixtures)} meczow")
 
-    # summaries = fetch_all_element_summaries(player_ids)
-    summaries = fetch_all_element_summaries(player_ids[:5])
+    summaries = fetch_all_element_summaries(player_ids)
+    # summaries = fetch_all_element_summaries(player_ids[:5])
     save_raw_json(summaries, "element_summaries")
     print(f"Pobrano historie dla {len(summaries)} zawodnikow")
